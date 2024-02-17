@@ -2,8 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const emailClient = require('../util/emailService')
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 const User = require('../models/User');
+const registrationTokenController = require('../controllers/RegistrationTokenController')
+
+const tokenController = new registrationTokenController()
 
 // Register a new user
 router.post('/register', async (req, res) => {
