@@ -4,8 +4,13 @@ const RepeatExerciseModel = require("../Model/ModelRepeatExercise")
 function RepeatExerciseDAO() {}
 
 RepeatExerciseDAO.prototype.create = async function (params) {
+  try {
   let repeatExerciseDocument = new RepeatExerciseModel(params)
   return await repeatExerciseDocument.save()
+  } catch (err) {
+    console.error('Error finding document:', err);
+    // Handle error
+  }
 }
 
 RepeatExerciseDAO.prototype.findOne = async function (params) {
@@ -64,8 +69,6 @@ RepeatExerciseDAO.prototype.deleteOneExercise = async function (params, exercise
   }
 }
 
-
-
 RepeatExerciseDAO.prototype.updateOneExercise = async function (params, exerciseId, updateData) {
   try {
     let doc = await RepeatExerciseModel.findOneAndUpdate(
@@ -91,17 +94,16 @@ RepeatExerciseDAO.prototype.updateOneExercise = async function (params, exercise
 //   { updateOne: { filter: { "exercises._id": exerciseId2 }, update: { $set: { "exercises.$.prompt": "New prompt" } } } },
 //   // ... more update operations as needed
 // ];
-RepeatExerciseDAO.prototype.updateMultipleExercises = async function (bulkUpdates) {
+RepeatExerciseDAO.prototype.updateMultipleExercises = async function (bulkUpdates, session) {
   try {
-    let doc = await RepeatExerciseModel.bulkWrite(bulkUpdates);
-
+    let doc = await RepeatExerciseModel.bulkWrite(bulkUpdates, {session:session});
     if (doc) {
       return doc;
     } else {
       console.log("Document or exercise not found");
     }
   } catch (err) {
-    console.error("Error updating exercise:", err);
+    console.error("Error updating RepeatExercise:", err);
     // Handle error
   }
 };
