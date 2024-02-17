@@ -46,7 +46,6 @@ IAMController.prototype.login = async function (req, res) {
     console.log(error)
     res.status(500).json({ message: 'Server error' });
   }
-  
 }
 
 var iamController = new IAMController()
