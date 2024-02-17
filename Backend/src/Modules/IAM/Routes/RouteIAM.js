@@ -4,6 +4,6 @@ const router = express.Router();
 
 var IAMController = require("../Controller/ControllerIAM")
 
-router.post('/', IAMController.test);
+router.post('/Login', IAMController.login);
 
 module.exports = router;
