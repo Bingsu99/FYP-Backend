@@ -54,7 +54,7 @@ RegistrationTokenDAO.prototype.updateOne = async function (params, update) {
 // Idea was to use it for removing emails from the Caregiver list in Patient Document, to track who haven't created an account
 // RegistrationTokenDAO.prototype.removeFromCaregiver = async function (params, elementToRemove) {
 //   try {
-//       let doc = await RegistrationTokenModel.findOneAndUpdate(params, { $pull: { caregiver: elementToRemove } }, { new: true });
+//       let doc = await RegistrationTokenModel.findOneAndUpdate(params, { $pull: { caregivers: elementToRemove } }, { new: true });
 //       if (doc) {
 //           return doc;
 //       } else {
@@ -72,7 +72,7 @@ RegistrationTokenDAO.prototype.updateOne = async function (params, update) {
 //     console.log("running inside reg")
 //     console.log(params)
 //     console.log(elementToRemove)
-//       let doc = await RegistrationTokenModel.findOneAndUpdate(params, { $pull: { patient: elementToRemove } }, { new: true });
+//       let doc = await RegistrationTokenModel.findOneAndUpdate(params, { $pull: { patients: elementToRemove } }, { new: true });
 //       if (doc) {
 //         console.log("have doc")
 //         console.log(doc)

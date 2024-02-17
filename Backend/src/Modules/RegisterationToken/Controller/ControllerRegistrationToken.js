@@ -18,9 +18,9 @@ RegistrationToken.prototype.createToken = async function (req, res) {
   };
 
   if (requestData["type"] === "caregiver") {
-    params.patient = requestData["patientToken"];
+    params.patients = requestData["patientToken"];
   }else if (requestData["type"] === "patient"){
-    params.therapist = requestData["therapistObjectID"];
+    params.therapists = requestData["therapistObjectID"];
   }else{
     res.status(404).json("Invalid type")
     return;
@@ -48,7 +48,7 @@ RegistrationToken.prototype.createTokenPairs = async function (req, res) {
     email: requestData["caregiverEmail"],
     token: caregiverToken,
     type: "caregiver",
-    patient: [requestData["patientEmail"]],
+    patients: [requestData["patientEmail"]],
   };
   
   const patient = {
@@ -56,8 +56,8 @@ RegistrationToken.prototype.createTokenPairs = async function (req, res) {
     email: requestData["patientEmail"],
     token: patientToken,
     type: "patient",
-    therapist: requestData["therapistOBJECTID"],
-    caregiver: [requestData["caregiverEmail"]],
+    therapists: requestData["therapistOBJECTID"],
+    caregivers: [requestData["caregiverEmail"]],
   };
 
   try{

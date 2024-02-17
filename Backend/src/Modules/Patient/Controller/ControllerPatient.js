@@ -2,6 +2,7 @@
 var Mongoose = require('../../Middlewares/Mongoose')
 var PatientDao = require("../Dao/DaoPatient");
 var CaregiverDao = require("../../Caregiver/Dao/DaoCaregiver");
+var TherapistDao = require("../../Therapist/Dao/DaoTherapist");
 const bcrypt = require('bcrypt');
 
 function PatientController() {}
@@ -56,6 +57,7 @@ PatientController.prototype.createPatientWithToken = async function (req, res) {
 
   try{
     var data = await PatientDao.create(params, session);
+    await TherapistDao.addPatient({_id:requestData["therapistObjectID"]}, data["_id"], session)
     for (const caregivertID of caregivers) {
       await CaregiverDao.addPatient({_id:caregivertID}, data["_id"], session)
     }

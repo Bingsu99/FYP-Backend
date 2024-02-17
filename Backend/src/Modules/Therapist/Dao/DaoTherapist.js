@@ -50,5 +50,19 @@ TherapistDAO.prototype.updateOne = async function (params, update) {
   }
 }
 
+TherapistDAO.prototype.addPatient = async function (params, elementToAdd, session) {
+  try {
+      let doc = await TherapistModel.findOneAndUpdate(params, { $push: { patients: elementToAdd } }, { new: true, session:session });
+      if (doc) {
+          return doc;
+      } else {
+          console.log('Document not found (TherapistDAO.addPatient)');
+      }
+  } catch (err) {
+      console.error('Error updating document:', err);
+      // Handle error
+  }
+}
+
 var therapistDAO = new TherapistDAO();
 module.exports = therapistDAO;
