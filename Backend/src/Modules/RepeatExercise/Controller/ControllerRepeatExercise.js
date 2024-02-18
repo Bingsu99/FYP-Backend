@@ -68,44 +68,57 @@ RepeatExerciseController.prototype.updateRepeatExercises = async function (req, 
         bulkWriteOps.push(params)
       })
     }else if (update!=undefined){
-      for (var i in update){
+      update.forEach(i => {
+
+        var exerciseParams = {}
+
+        if (i["recording"] != null) {
+          exerciseParams["exercises.$.recording"] = i["recording"];
+        }
+
+        if (i["prompt"] != null) {
+          exerciseParams["exercises.$.prompt"] = i["prompt"];
+        }
+
         var params = { 
           updateOne: {
             filter: {
-              _id: "repeatExerciseId",
-              "exercises._id": "exercise_id_variable" 
+              _id: i["_id"],
+              "exercises._id": i["exerciseID"]
             }, 
             update: { 
-              $set: { "exercises.$.recording": "new_recording_variable",  "exercises.$.prompt": "new_prompt_variable"} 
+              $set: exerciseParams
             } 
           }
         }
         bulkWriteOps.push(params)
-      }
+      })
     }else if(create!=undefined){
-      for (var i in create){
+      create.forEach(i => {
+        console.log(i)
         var params = { 
           updateOne: {
             filter: {
-              _id: "repeatExerciseId",
-            }, 
-            update: { $push: { exercises: ["array of exercise schema"] } }    // {prompt: "", recording: ""}
+              _id: i["_id"],
+            },
+            update: { $push: { exercises: { $each: i["exercises"] }} } 
           }
         }
         bulkWriteOps.push(params)
-      }
+      })
     }else if(deleteData!=undefined){
-      for (var i in deleteData){
+      deleteData.forEach(i => {
+        console.log(i)
         var params = {
           updateOne: {
             filter: { 
-              _id: "repeatExerciseId", 
+              _id: i["_id"],
             },
-            update: { $pull: { exercises: { _id: "exercises._id" } } }
+            update: { $pull: { exercises: { _id: { $in: i["exerciseID"] } } } } 
           }
         }
         bulkWriteOps.push(params)
-      }
+      })
     }
     const doc = await RepeatExerciseDao.updateMultipleExercises(bulkWriteOps)
     res.status(200).json({data:doc})
