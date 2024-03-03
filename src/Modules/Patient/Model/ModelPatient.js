@@ -1,5 +1,6 @@
 'use strict';
 const mongoose = require('mongoose');
+const ActivityAccessSchema = require("../../DecksManagement/Model/ActivityAccessSchema")
 
 // const exerciseRecordSchema = new mongoose.Schema({
 //   deckID: { type: mongoose.Schema.Types.ObjectId },
@@ -26,6 +27,7 @@ const patientSchema = new mongoose.Schema({
   password: { type: String, required: true },
   caregivers: { type: [mongoose.Schema.Types.ObjectId] },
   therapists: { type: [mongoose.Schema.Types.ObjectId] },
+  access: { type: ActivityAccessSchema }
   // repeatSentence_deck: { type: [mongoose.Schema.Types.ObjectId] }, // Should save the ObjectID of decks that they have access to
   // completeSentence_deck: { type: [mongoose.Schema.Types.ObjectId] }, // Should save the ObjectID of decks that they have access to
   // repeatSentence_result: {type: [exerciseRecordSchema]},

@@ -4,6 +4,7 @@ const router = express.Router();
 
 var CompleteSentenceDeckController = require("../Controller/ControllerCompleteSentenceDeck")
 
+// Should Migrate to DecksManagement
 // Creates a new CompleteSentenceDeck
 router.post('/Create', CompleteSentenceDeckController.createCompleteSentenceDeck);
 router.post('/Read', CompleteSentenceDeckController.readCompleteSentenceDeck);

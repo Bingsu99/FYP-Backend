@@ -12,7 +12,7 @@ const TherapistRoutes = require('./Modules/Therapist/Routes/RouteTherapist');
 const IAMRoutes = require('./Modules/IAM/Routes/RouteIAM');
 const RepeatExerciseRoutes = require('./Modules/RepeatExercise/Routes/RouteRepeatExercise');
 const CompleteSentenceDeckRoutes = require('./Modules/CompleteSentenceDeck/Routes/RouteCompleteSentenceDeck');
-const DecksRoute = require('./Modules/Decks/Routes/RouteDecks');
+const DecksRoute = require('./Modules/DecksManagement/Routes/RouteDecks');
 
 const app = express();
 const PORT = process.env.PORT || 3000;

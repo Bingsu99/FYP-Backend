@@ -14,16 +14,12 @@ CompleteSentenceDeckDAO.prototype.create = async function (params) {
 }
 
 CompleteSentenceDeckDAO.prototype.findOne = async function (params) {
-  try{
-    let doc = await CompleteSentenceDeckModel.findOne(params)
-    if (doc) {
-      return doc
-    } else {
-      console.log('Document not found');
-    }
-  } catch (err) {
-    console.error('Error finding document:', err);
-    // Handle error
+  let doc = await CompleteSentenceDeckModel.findOne(params)
+  if (doc) {
+    return doc
+  } else {
+    console.log('Document not found');
+    return doc
   }
 }
 
@@ -42,17 +38,8 @@ CompleteSentenceDeckDAO.prototype.findOneExercise = async function (params) {
 }
 
 CompleteSentenceDeckDAO.prototype.deleteOne = async function (params) {
-  try {
-    let deletedDoc = await CompleteSentenceDeckModel.deleteOne(params);
-    if (deletedDoc.deletedCount > 0) {
-      console.log('Document deleted successfully');
-    } else {
-      console.log('Document not found');
-    }
-  } catch (err) {
-    console.error('Error deleting document:', err);
-    // Handle error
-  }
+  let deletedDoc = await CompleteSentenceDeckModel.findOneAndDelete(params);
+  return deletedDoc;
 }
 
 CompleteSentenceDeckDAO.prototype.findAllAccess = async function (params) {
@@ -90,16 +77,12 @@ CompleteSentenceDeckDAO.prototype.findAllCreator = async function (params) {
 //   // ... more update operations as needed
 // ];
 CompleteSentenceDeckDAO.prototype.updateMultipleExercises = async function (bulkUpdates, session) {
-  try {
-    let doc = await CompleteSentenceDeckModel.bulkWrite(bulkUpdates, {session:session});
-    if (doc) {
-      return doc;
-    } else {
-      console.log("Document or exercise not found");
-    }
-  } catch (err) {
-    console.error("Error updating CompleteSentenceDeck:", err);
-    // Handle error
+  let doc = await CompleteSentenceDeckModel.bulkWrite(bulkUpdates, {session:session});
+  if (doc["modifiedCount"] !== 0) {
+    return doc;
+  } else {
+    console.log("Error with Update");
+    return null;
   }
 };
 
