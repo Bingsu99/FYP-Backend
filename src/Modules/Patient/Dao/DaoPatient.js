@@ -3,16 +3,10 @@ const PatientModel = require("../Model/ModelPatient")
 
 function PatientDAO() {}
 
-PatientDAO.prototype.create = async function (params, session) {
-  try{
-    console.log(params)
+PatientDAO.prototype.create = async function (params, session=null) {
     let patientDocument = new PatientModel(params)
     let doc = await patientDocument.save({session:session})
-    console.log(doc)
     return doc;
-  } catch (err) {
-    console.error('Document not created:', err);
-  }
 }
 
 PatientDAO.prototype.findOne = async function (params) {

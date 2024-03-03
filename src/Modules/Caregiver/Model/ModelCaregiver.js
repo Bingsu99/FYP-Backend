@@ -6,7 +6,8 @@ const caregiverSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   patients: { type: [mongoose.Schema.Types.ObjectId] },
-  exerise1_deck: { type: [mongoose.Schema.Types.ObjectId] },
+  // repeatSentence_deck: { type: [mongoose.Schema.Types.ObjectId] }, // Should save the ObjectID of decks that they created
+  completeSentence_deck: { type: [mongoose.Schema.Types.ObjectId] }, // Should save the ObjectID of decks that they created
 });
 
 const CaregiverModel = mongoose.model('Caregiver', caregiverSchema);

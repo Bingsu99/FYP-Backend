@@ -3,7 +3,7 @@ const CaregiverModel = require("../Model/ModelCaregiver")
 
 function CaregiverDAO() {}
 
-CaregiverDAO.prototype.create = async function (params, session) {
+CaregiverDAO.prototype.create = async function (params, session=null) {
   let caregiverDocument = new CaregiverModel(params)
   return await caregiverDocument.save({session:session})
 }

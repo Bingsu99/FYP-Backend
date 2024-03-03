@@ -11,6 +11,6 @@ router.post('/', RegistrationToken.createToken);
 router.post('/Pair', RegistrationToken.createTokenPairs);
 
 // Create account from Registration Token
-router.get('/GetToken', RegistrationToken.getToken);
+router.post('/GetToken', RegistrationToken.getToken);
 
 module.exports = router;

@@ -44,46 +44,68 @@ RegistrationToken.prototype.createTokenPairs = async function (req, res) {
   const caregiverToken = uuidv4();
 
   const caregiver= {
-    name: requestData["caregiverName"],
-    email: requestData["caregiverEmail"],
+    name: requestData["caregiver"]["name"],
+    email: requestData["caregiver"]["email"],
     token: caregiverToken,
     type: "caregiver",
-    patients: [requestData["patientEmail"]],
+    patients: [requestData["patient"]["email"]],
   };
   
   const patient = {
-    name: requestData["patientName"],
-    email: requestData["patientEmail"],
+    name: requestData["patient"]["name"],
+    email: requestData["patient"]["email"],
     token: patientToken,
     type: "patient",
-    therapists: requestData["therapistOBJECTID"],
-    caregivers: [requestData["caregiverEmail"]],
+    therapists: requestData["therapist"],
+    caregivers: [requestData["caregiver"]["email"]],
   };
 
   try{
     var patientData = await registrationTokenDAO.create(patient, session);
     var caregiverData = await registrationTokenDAO.create(caregiver, session);
     await session.commitTransaction();
-    res.status(200).json({patientData:patientData, caregiverData:caregiverData})
+    res.status(200).json({status:"success"})
     // emailClient.sendRegisterEmail(requestData["patientEmail"], token);
     // emailClient.sendRegisterEmail(requestData["caregiverEmail"], token);
   }catch (err) {
     console.log(err)
-    res.status(500).json({error:err.message})
+    res.status(500).json({status:"failed", error:err.message})
   }finally{
     session.endSession();
   }
 }
 
 RegistrationToken.prototype.getToken = async function (req, res) {
-  var params = {token : req.query.token}
-  try{
-    var data = await registrationTokenDAO.findOne(params);
-    res.status(200).json({data:data})
-  }catch (err) {
-    console.log(err)
-    res.status(500).json({error:err.message})
+  const requestData = req.body;
+  var params = {token : requestData["token"]}
+  var data = await registrationTokenDAO.findOne(params);
+
+  console.log(data)
+
+  if (data === undefined || data === null){
+    res.status(400).json({status:"failed", error:"Token does not exist"})
+    return;
   }
+
+  if (data["userObjectID"] !== undefined){
+    res.status(400).json({status:"failed", error:"Token have been consumed"})
+    return;
+  }
+
+  var resp = {
+    name: data["name"],
+    email: data["email"],
+    type: data["type"]
+  }
+  
+  if (data["type"] == "patient"){
+    resp["caregivers"] = data["caregivers"];
+    resp["therapistID"] = data["therapists"][0];
+  } else{
+    resp["patients"] = data["patients"];
+  }
+  
+  res.status(200).json({status:"success", data:resp})
 }
 
 var registrationTokenController = new RegistrationToken()

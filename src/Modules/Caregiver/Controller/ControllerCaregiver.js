@@ -1,7 +1,8 @@
 'use strict';
 var Mongoose = require('../../Middlewares/Mongoose')
-var CaregiverDao = require("../Dao/DaoCaregiver");
+var caregiverDao = require("../Dao/DaoCaregiver");
 const patientDAO = require("../../Patient/Dao/DaoPatient");
+const registrationTokenDao = require("../../RegisterationToken/Dao/DaoRegistrationToken");
 const bcrypt = require('bcrypt');
 
 function CaregiverController() {}
@@ -20,7 +21,7 @@ CaregiverController.prototype.createCaregiver = async function (req, res) {
   }
 
   try{
-    var data = await CaregiverDao.create(params);
+    var data = await caregiverDao.create(params);
     res.status(200).json({data:data})
   }catch (err) {
     console.log(err)
@@ -39,7 +40,6 @@ CaregiverController.prototype.createCaregiverWithToken = async function (req, re
     }
   });
 
-
   // Hash the password
   const saltRounds = 10;
   const hashedPassword = await bcrypt.hash(requestData["password"], saltRounds);
@@ -55,15 +55,19 @@ CaregiverController.prototype.createCaregiverWithToken = async function (req, re
   session.startTransaction();
 
   try{
-    var data = await CaregiverDao.create(params, session);
+    var data = await caregiverDao.create(params, session);
+    await registrationTokenDao.updateOne({email:requestData["email"]}, {userObjectID: data["_id"]});
     for (const patientID of patients) {
       await patientDAO.addCaregiver({_id:patientID}, data["_id"], session)
     }
     await session.commitTransaction();
-    res.status(200).json({data:data})
+    const resp = {
+      _id: data["_id"]
+    }
+    res.status(200).json({status:"success", data:resp})
   }catch (err) {
     console.log(err)
-    res.status(500).json({error:err.message})
+    res.status(500).json({status:"failed",error:err.message})
   }finally{
     session.endSession();
   }

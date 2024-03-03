@@ -10,27 +10,27 @@ function IAMController() {}
 IAMController.prototype.login = async function (req, res) {
   const { type, email, password } = req.body;
   try{
-    var user = undefined;
+    var doc;
     if (type === "patient"){
-      user = await PatientDao.findOne({ email:email });
+      doc = await PatientDao.findOne({ email:email });
     }else if (type === "therapist"){
-      user = await TherapistDao.findOne({ email:email });
+      doc = await TherapistDao.findOne({ email:email });
     }else if (type === "caregiver"){
-      user = await CaregiverDao.findOne({ email:email });
+      doc = await CaregiverDao.findOne({ email:email });
     }else{
-      return res.status(400).json({ message: 'Invalid user type: ' + type });
+      return res.status(400).json({ status:"failed", message: 'Bad Request: Invalid User Type ' + type });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
+    const passwordMatch = await bcrypt.compare(password, doc.password);
     if (!passwordMatch) {
-      return res.status(401).json({ message: 'Authentication failed' });
+      return res.status(401).json({ status:"failed", message: 'Authentication failed' });
     }
 
     // Generate JWT tokens
-    const accessToken = jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, {
+    const accessToken = jwt.sign({ _id: doc._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: '60m', // Change this to desired expiration time
     });
-    const refreshToken = jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, {
+    const refreshToken = jwt.sign({ _id: doc._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: '90d', // Change this to desired expiration time
     });
 
@@ -41,10 +41,41 @@ IAMController.prototype.login = async function (req, res) {
 
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    res.json({ accessToken });
+    res.status(200).json({status:"success", accessToken, data:{"_id": doc["_id"]} });
   } catch (error) {
     console.log(error)
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({status:"failed", message: 'Internal Server error' });
+  }
+}
+
+IAMController.prototype.register = async function (req, res) {
+  const { name, email, password, type } = req.body;
+  try{
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    var doc;
+    var params = {
+      name: name,
+      email: email,
+      password: hashedPassword,
+    }
+
+    if (type==="patient"){
+      doc = await PatientDao.create(params)
+    }else if(type==="caregiver"){
+      doc = await CaregiverDao.create(params)
+    }else if(type==="therapist"){
+      doc = await TherapistDao.create(params)
+    }else{
+      res.status(400).json({status:"failed", message: 'Bad Request: Invalid User Type ' + type})
+    }
+
+    res.status(200).json({ status:"success", data:{"_id": doc["_id"]}});
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({status:"failed", message: 'Internal Server error' });
   }
 }
 

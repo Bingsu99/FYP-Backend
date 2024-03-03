@@ -3,6 +3,7 @@ var Mongoose = require('../../Middlewares/Mongoose')
 var PatientDao = require("../Dao/DaoPatient");
 var CaregiverDao = require("../../Caregiver/Dao/DaoCaregiver");
 var TherapistDao = require("../../Therapist/Dao/DaoTherapist");
+var RegistrationTokenDao = require("../../RegisterationToken/Dao/DaoRegistrationToken")
 const bcrypt = require('bcrypt');
 
 function PatientController() {}
@@ -49,7 +50,7 @@ PatientController.prototype.createPatientWithToken = async function (req, res) {
     email: requestData["email"],
     password: hashedPassword,
     caregivers: caregivers,
-    therapists: [requestData["therapistObjectID"]],
+    therapists: [requestData["therapistID"]],
   }
 
   const session = await Mongoose.client.startSession();
@@ -57,15 +58,19 @@ PatientController.prototype.createPatientWithToken = async function (req, res) {
 
   try{
     var data = await PatientDao.create(params, session);
-    await TherapistDao.addPatient({_id:requestData["therapistObjectID"]}, data["_id"], session)
+    await RegistrationTokenDao.updateOne({email:requestData["email"]}, {userObjectID: data["_id"]});
+    await TherapistDao.addPatient({_id:requestData["therapistID"]}, data["_id"], session);
     for (const caregivertID of caregivers) {
-      await CaregiverDao.addPatient({_id:caregivertID}, data["_id"], session)
+      await CaregiverDao.addPatient({_id:caregivertID}, data["_id"], session);
     }
     await session.commitTransaction();
-    res.status(200).json({data:data})
+    const resp = {
+      _id: data["_id"]
+    }
+    res.status(200).json({status:"success", data:resp});
   }catch (err) {
     console.log(err)
-    res.status(500).json({error:err.message})
+    res.status(500).json({status:"failed", error:err.message})
   }finally{
     session.endSession();
   }
