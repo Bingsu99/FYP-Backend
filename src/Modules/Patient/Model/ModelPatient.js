@@ -28,12 +28,11 @@ const patientSchema = new mongoose.Schema({
   caregivers: { type: [mongoose.Schema.Types.ObjectId] },
   therapists: { type: [mongoose.Schema.Types.ObjectId] },
   access: { type: ActivityAccessSchema }
-  // repeatSentence_deck: { type: [mongoose.Schema.Types.ObjectId] }, // Should save the ObjectID of decks that they have access to
-  // completeSentence_deck: { type: [mongoose.Schema.Types.ObjectId] }, // Should save the ObjectID of decks that they have access to
+});
+
   // repeatSentence_result: {type: [exerciseRecordSchema]},
   // completeSentence_result: {type: [exerciseRecordSchema]},
   // dailyAssignment_result: {type: [{assignmentRecordID : mongoose.Schema.Types.ObjectId, datetime: {type: Date,}}]}
-});
 
 const PatientModel = mongoose.model('Patient', patientSchema);
 

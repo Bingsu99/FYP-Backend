@@ -10,9 +10,8 @@ const RegisterationTokenRoutes = require('./Modules/RegisterationToken/Routes/Ro
 const CaregiverRoutes = require('./Modules/Caregiver/Routes/RouteCaregiver');
 const TherapistRoutes = require('./Modules/Therapist/Routes/RouteTherapist');
 const IAMRoutes = require('./Modules/IAM/Routes/RouteIAM');
-const RepeatExerciseRoutes = require('./Modules/RepeatExercise/Routes/RouteRepeatExercise');
-const CompleteSentenceDeckRoutes = require('./Modules/CompleteSentenceDeck/Routes/RouteCompleteSentenceDeck');
 const DecksRoute = require('./Modules/DecksManagement/Routes/RouteDecks');
+const ResultRoute = require('./Modules/ActivityResult/Routes/RouteActivityResult');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,9 +27,8 @@ app.use("/RegistrationToken", RegisterationTokenRoutes);
 app.use("/Caregiver", CaregiverRoutes);
 app.use("/Therapist", TherapistRoutes);
 app.use("/IAM", IAMRoutes);
-app.use("/RepeatExercise", RepeatExerciseRoutes);
 app.use("/Decks", DecksRoute);
-app.use("/CompleteSentenceDeck", CompleteSentenceDeckRoutes);
+app.use("/ActivityResult", ResultRoute);
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

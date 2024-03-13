@@ -29,6 +29,28 @@ CaregiverController.prototype.createCaregiver = async function (req, res) {
   }
 }
 
+CaregiverController.prototype.getPatients = async function (req, res) {
+  const requestData = req.body;
+  
+  const caregiverDetails = await caregiverDao.findOne({"_id": requestData["_id"]})
+  if (caregiverDetails !== null){
+    const patientDetails = await patientDAO.findAll(caregiverDetails["patients"])
+
+    var resp = []
+    patientDetails.forEach((patient)=>{
+      var params = {
+        "_id" : patient["_id"],
+        "name" : patient["name"],
+      }
+      resp.push(params)
+    })
+
+    res.status(200).json({status:"success", data:resp})
+  }else{
+    res.status(404).json({error:"Caregiver ID not found in database"})
+  }
+}
+
 CaregiverController.prototype.createCaregiverWithToken = async function (req, res) {
   const requestData = req.body;
   var patients = [];

@@ -9,17 +9,9 @@ CaregiverDAO.prototype.create = async function (params, session=null) {
 }
 
 CaregiverDAO.prototype.findOne = async function (params) {
-  try{
     let doc = await CaregiverModel.findOne(params)
-    if (doc) {
-      return doc
-    } else {
-      console.log('Document not found (CaregiverDAO.findOne)');
-    }
-  } catch (err) {
-    console.error('Error finding document:', err);
-    // Handle error
-  }
+    console.log(doc)
+    return doc;
 }
 
 CaregiverDAO.prototype.deleteOne = async function (params) {

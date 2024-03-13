@@ -4,13 +4,9 @@ const CompleteSentenceDeckModel = require("../Model/ModelCompleteSentenceDeck")
 function CompleteSentenceDeckDAO() {}
 
 CompleteSentenceDeckDAO.prototype.create = async function (params) {
-  try {
     let completeSentenceDeckDocument = new CompleteSentenceDeckModel(params)
-    return await completeSentenceDeckDocument.save()
-  } catch (err) {
-    console.error('Error finding document:', err);
-    // Handle error
-  }
+    let doc = await completeSentenceDeckDocument.save()
+    return doc;
 }
 
 CompleteSentenceDeckDAO.prototype.findOne = async function (params) {
@@ -78,12 +74,7 @@ CompleteSentenceDeckDAO.prototype.findAllCreator = async function (params) {
 // ];
 CompleteSentenceDeckDAO.prototype.updateMultipleExercises = async function (bulkUpdates, session) {
   let doc = await CompleteSentenceDeckModel.bulkWrite(bulkUpdates, {session:session});
-  if (doc["modifiedCount"] !== 0) {
-    return doc;
-  } else {
-    console.log("Error with Update");
-    return null;
-  }
+  return doc;
 };
 
 var completeSentenceDeckDAO = new CompleteSentenceDeckDAO();

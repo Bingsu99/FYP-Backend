@@ -23,6 +23,12 @@ PatientDAO.prototype.findOne = async function (params) {
   }
 }
 
+PatientDAO.prototype.findAll = async function (listOfPatientsObjIDs) {
+    let docs = await PatientModel.find({_id: { $in: listOfPatientsObjIDs }});
+    return docs;
+}
+
+
 PatientDAO.prototype.deleteOne = async function (params) {
   try {
     let deletedDoc = await PatientModel.deleteOne(params);
@@ -38,16 +44,12 @@ PatientDAO.prototype.deleteOne = async function (params) {
 }
 
 PatientDAO.prototype.updateOne = async function (params, update) {
-  try {
-    let doc = await PatientModel.findOneAndUpdate(params, update, { new: true });
-    if (doc) {
-      return doc;
-    } else {
-      console.log('Document not found (PatientDAO.findOneAndUpdate)');
-    }
-  } catch (err) {
-    console.error('Error updating document:', err);
-    // Handle error
+  let doc = await PatientModel.findOneAndUpdate(params, update, { new: true });
+  if (doc) {
+    console.log(doc)
+    return doc;
+  } else {
+    console.log('Document not found (PatientDAO.updateOne)');
   }
 }
 

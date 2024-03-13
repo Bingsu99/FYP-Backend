@@ -9,17 +9,8 @@ TherapistDAO.prototype.create = async function (params) {
 }
 
 TherapistDAO.prototype.findOne = async function (params) {
-  try{
     let doc = await TherapistModel.findOne(params)
-    if (doc) {
-      return doc
-    } else {
-      console.log('Document not found');
-    }
-  } catch (err) {
-    console.error('Error finding document:', err);
-    // Handle error
-  }
+    return doc
 }
 
 TherapistDAO.prototype.deleteOne = async function (params) {

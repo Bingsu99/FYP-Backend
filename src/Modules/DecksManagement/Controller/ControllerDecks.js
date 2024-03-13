@@ -1,5 +1,5 @@
 'use strict';
-var completeSentenceDeckDAO = require("../../CompleteSentenceDeck/Dao/DaoCompleteSentenceDeck");
+var completeSentenceDeckDAO = require("../../CompleteSentence/Dao/DaoCompleteSentenceDeck");
 var therapistDAO = require("../../Therapist/Dao/DaoTherapist")
 var caregiverDAO = require("../../Caregiver/Dao/DaoCaregiver")
 var patientDAO = require("../../Patient/Dao/DaoPatient")
@@ -9,21 +9,38 @@ function DecksController() {}
 // For patients. Not done yet
 DecksController.prototype.getAccessDecks = async function (req, res) {
     const requestData = req.body;
+    const activityKey = requestData["activity"];
+
     const params = { 
         access: requestData["_id"], 
     }
 
+    var resp = [];
+
     try{
-        var resp = []
-        const docs = await completeSentenceDeckDAO.findAllAccess(params);
-        docs.forEach((doc, indx) => {
-            resp.push({
-                _id: doc["_id"],
-                name: doc["name"],
-                numOfExercises: doc["exercises"].length,
-                activity: "Complete The Sentence"
+        if (activityKey == 0){
+            const docs = await completeSentenceDeckDAO.findAllAccess(params);
+
+            docs.forEach((doc, indx) => {
+                resp.push({
+                    _id: doc["_id"],
+                    name: doc["name"],
+                    numOfExercises: doc["exercises"].length,
+                    activity: 0
+                })
             })
-        })
+
+        } else{
+            // Return all decks with access
+            docs = await completeSentenceDeckDAO.findAllAccess(params);
+            if (doc===null){
+                res.status(400).json({status:"failed", error:"No decks found"})
+                return;
+            }
+        } // Add more activities in future if needed
+
+        
+       
         res.status(200).json({data:resp})
     }catch (err) {
         console.log(err)
@@ -71,17 +88,23 @@ DecksController.prototype.createDeck = async function (req, res) {
     try{
         if (activityKey == 0){
             doc = await completeSentenceDeckDAO.create(deckParams)
+        }else{
+            res.status(400).json({status:"failed", error:"Invalid Activity Type"})
         } // Add more activities in future if needed
+
         const params = { _id: requestData["creator"] };
         const update = {
             $push: { [`creator.${activityKey}`]: doc["_id"] }
         };
 
-        
+        // To depreciate the keying in from frontend.
         if (requestData["userType"] == "caregiver"){
             caregiverDAO.updateOne(params, update)
-        }else{
+        }else if (requestData["userType"] == "therapist"){
             therapistDAO.updateOne(params, update)
+        }else{
+            res.status(400).json({status:"failed", error:"Invalid UserType"})
+            return;
         }
 
         const resp = {
@@ -118,10 +141,21 @@ DecksController.prototype.deleteDeck = async function (req, res) {
         
         if (requestData["userType"] == "caregiver"){
             caregiverDAO.updateOne(params, update)
-        }else{
+        }else if (requestData["userType"] == "therapist"){
             therapistDAO.updateOne(params, update)
+        }else{
+            res.status(500).json({status:"failed", error:"Invalid userType"})
+            return;
         }
-        // Need handle removing access from patients too. (Search access list inside the completeSentenceDeckDAO's access and go to each patient and remove them)
+        
+        // Handle removing of deckID from patient's access list
+        for (const userID of doc["access"]) {
+            const searchParams = { _id: userID };
+            const updateParams = {
+                $pull: { [`access.${activityKey}`]: doc["_id"] }
+            };
+            await patientDAO.updateOne(searchParams, updateParams);
+        }
 
         res.status(200).json({status:"success"})
 
@@ -141,9 +175,27 @@ DecksController.prototype.readDeck = async function (req, res) {
     try{
         if (activityKey == 0){
             doc = await completeSentenceDeckDAO.findOne({_id:requestData["_id"]});
+            if (doc===null){
+                res.status(400).json({status:"failed", error:"No decks found"})
+                return;
+            }
+        } else{
+            res.status(400).json({status:"failed", error:"Invalid activityType"})
+            return;
         } // Add more activities in future if needed
 
-        res.status(200).json({status:"success", data: doc})
+        let modifiedExercises = doc["exercises"].map(exercise => {
+            let plainExercise = exercise.toObject();
+            return { ...plainExercise, activity: activityKey,  deckID: doc["_id"]};
+        });
+
+        var resp={
+            name: doc["name"],
+            _id: doc["_id"],
+            exercises: modifiedExercises     
+        }
+
+        res.status(200).json({status:"success", data: resp})
 
     }catch (err) {
         console.log(err)
@@ -151,36 +203,56 @@ DecksController.prototype.readDeck = async function (req, res) {
     }
 }
 
+// Better to add session and manage transaction here
 DecksController.prototype.updateDeck = async function (req, res) {
-    // Need deckID, userID, activity(in number)
     const requestData = req.body;
     var { update, create , deleteData, addAccess, removeAccess} = requestData;
     const activityKey = requestData["activity"];
 
     var bulkWriteOps = [];
     if (addAccess!=undefined){
-        addAccess.forEach(i => {
-        var params = { 
-            updateOne: {
-            filter: {
-                _id: i["_id"],
-            }, 
-            update: { $push: { access: { $each: i["userID"] } } }
+        addAccess.forEach(async (i) => {
+            // For updating the access list in Activity
+            var params = { 
+                updateOne: {
+                filter: {
+                    _id: i["_id"],
+                }, 
+                update: { $push: { access: { $each: i["userID"] } } }
+                }
             }
-        }
-        bulkWriteOps.push(params)
+            bulkWriteOps.push(params)
+
+            // For updating the patient access list
+            i["userID"].forEach(async (userID)=>{
+                const searchParams = { _id: userID };
+                const updateParams = {
+                    $push: { [`access.${activityKey}`]: new Mongoose.client.Types.ObjectId(i["_id"]) }
+                };
+                await patientDAO.updateOne(searchParams, updateParams)
+            })
         })
     }else if (removeAccess!=undefined){
+        // For updating the access list in Activity
         removeAccess.forEach(i => {
-        var params = { 
-            updateOne: {
-            filter: {
-                _id: i["_id"],
-            }, 
-            update: { $pull: { access: { $in: i["userID"] } } } 
+            var params = { 
+                updateOne: {
+                filter: {
+                    _id: i["_id"],
+                }, 
+                update: { $pull: { access: { $in: i["userID"] } } } 
+                }
             }
-        }
-        bulkWriteOps.push(params)
+            bulkWriteOps.push(params)
+
+            // For updating the patient access list
+            i["userID"].forEach(async (userID)=>{
+                const searchParams = { _id: userID };
+                const updateParams = {
+                    $pull: { [`access.${activityKey}`]: i["_id"] }
+                };
+                await patientDAO.updateOne(searchParams, updateParams)
+            })
         })
     }else if (update!=undefined){
         update.forEach(i => {
@@ -197,8 +269,8 @@ DecksController.prototype.updateDeck = async function (req, res) {
         var params = { 
             updateOne: {
             filter: {
-                _id: i["_id"],
-                "exercises._id": i["exerciseID"]
+                _id: new Mongoose.client.Types.ObjectId(i["_id"]),
+                "exercises._id": new Mongoose.client.Types.ObjectId(i["exerciseID"])
             }, 
             update: { 
                 $set: exerciseParams
@@ -221,7 +293,6 @@ DecksController.prototype.updateDeck = async function (req, res) {
         })
     }else if(deleteData!=undefined){
         deleteData.forEach(i => {
-        console.log(i)
         var params = {
             updateOne: {
             filter: { 
@@ -241,7 +312,7 @@ DecksController.prototype.updateDeck = async function (req, res) {
         } // Add more activities in future if needed
 
         if (result !== null){
-            res.status(200).json({status:"success"})
+            res.status(200).json({status:"success", data:result})
         }else{
             res.status(500).json({status:"failed", error:"Error with updating"})
         }
