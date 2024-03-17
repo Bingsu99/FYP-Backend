@@ -3,46 +3,122 @@ var CompleteSentenceResultDAO = require("../../CompleteSentence/Dao/DaoCompleteS
 
 function ResultManagementController() {}
 
-ResultManagementController.prototype.getResultsByDay = async function (req, res) {
+ResultManagementController.prototype.getResults = async function (req, res) {
     const requestData = req.body;
-    const activityKey = requestData["activity"]
-    try{
-        if (activityKey === 0){
-            const resultsByDay = await CompleteSentenceResultDAO.getResultsByDay(requestData["startDate"], requestData["endDate"])
-            res.status(200).json({status:"success", data:resultsByDay});
-            return;
-        } else{
-            const resultsByDay = await CompleteSentenceResultDAO.getResultsByDay(requestData["startDate"], requestData["endDate"])
-            // To modify and fit all activity DAOs here
-            res.status(200).json({status:"success", data:resultsByDay});
-            return;
-        }// To add more Activities as needed
-    }catch (err) {
-        console.log(err)
-        res.status(500).json({status:"failed", error:err.message})
-    }
-}
+    const activityKey = requestData["activity"];
+    const timeIndicator = requestData["timeIndicator"]; // Expecting "day" or "week"
 
-ResultManagementController.prototype.getResultsByWeek = async function (req, res) {
+    try {
+        let results;
+        if (activityKey === 0) {
+            if (timeIndicator === "day") {
+                results = await CompleteSentenceResultDAO.getResultsByDay(requestData["startDate"], requestData["endDate"]);
+            } else if (timeIndicator === "week") {
+                results = await CompleteSentenceResultDAO.getResultsByWeek(requestData["startDate"], requestData["endDate"]);
+            } else {
+                return res.status(400).json({status: "failed", error: "Invalid time indicator"});
+            }
+            res.status(200).json({status: "success", data: results});
+            return;
+        } else {
+            if (timeIndicator === "day") {
+                results = await CompleteSentenceResultDAO.getResultsByDay(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else if (timeIndicator === "week") {
+                results = await CompleteSentenceResultDAO.getResultsByWeek(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else {
+                return res.status(400).json({status: "failed", error: "Invalid time indicator"});
+            }
+            res.status(200).json({status: "success", data: results});
+            return;
+        }
+        // Add more else if for different activity keys
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({status: "failed", error: err.message});
+    }
+};
+
+
+ResultManagementController.prototype.getStatistics = async function (req, res) {
     const requestData = req.body;
-    const activityKey = requestData["activity"]
+    console.log(requestData)
+    const activityKey = requestData["activity"];
+    const timeIndicator = requestData["timeIndicator"]; // This will be "day" or "week"
 
-    try{
-        if (activityKey === 0){
-            const resultsByWeek = await CompleteSentenceResultDAO.getResultsByWeek(requestData["startDate"], requestData["endDate"])
-            res.status(200).json({status:"success", data:resultsByWeek});
+    try {
+        let results;
+        if (activityKey === 0) {
+            if (timeIndicator === "day") {
+                results = await CompleteSentenceResultDAO.getStatisticByDay(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else if (timeIndicator === "week") {
+                results = await CompleteSentenceResultDAO.getStatisticByWeek(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else {
+                return res.status(400).json({status: "failed", error: "Invalid time indicator"});
+            }
+            res.status(200).json({status: "success", data: results});
             return;
-        } else{
-            const resultsByWeek = await CompleteSentenceResultDAO.getResultsByWeek(requestData["startDate"], requestData["endDate"])
-            // To modify and fit all activity DAOs here
-            res.status(200).json({status:"success", data:resultsByWeek});
+        } else {
+            // Future logic for other activityKeys
+            if (timeIndicator === "day") {
+                results = await CompleteSentenceResultDAO.getStatisticByDay(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else if (timeIndicator === "week") {
+                results = await CompleteSentenceResultDAO.getStatisticByWeek(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else {
+                return res.status(400).json({status: "failed", error: "Invalid time indicator"});
+            }
+            res.status(200).json({status: "success", data: results});
             return;
-        }// To add more Activities as needed
-    }catch (err) {
-        console.log(err)
-        res.status(500).json({status:"failed", error:err.message})
+        } // Add more else if for different activity keys
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({status: "failed", error: err.message});
     }
-}
+};
+
+ResultManagementController.prototype.getTimeSpent = async function (req, res) {
+    const requestData = req.body;
+    const activityKey = requestData["activity"];
+    const timeIndicator = requestData["timeIndicator"]; // Expecting "day" or "week"
+
+    try {
+        let results;
+        if (activityKey === 0) {
+            if (timeIndicator === "day") {
+                results = await CompleteSentenceResultDAO.getTimeSpentByDay(requestData["startDate"], requestData["endDate"]);
+            } else if (timeIndicator === "week") {
+                results = await CompleteSentenceResultDAO.getTimeSpentByWeek(requestData["startDate"], requestData["endDate"]);
+            } else {
+                return res.status(400).json({status: "failed", error: "Invalid time indicator"});
+            }
+            res.status(200).json({status: "success", data: results});
+            return;
+        } else {
+            if (timeIndicator === "day") {
+                results = await CompleteSentenceResultDAO.getTimeSpentByDay(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else if (timeIndicator === "week") {
+                results = await CompleteSentenceResultDAO.getTimeSpentByWeek(requestData["startDate"], requestData["endDate"]);
+                // Add more activities as  needed
+            } else {
+                return res.status(400).json({status: "failed", error: "Invalid time indicator"});
+            }
+            res.status(200).json({status: "success", data: results});
+            return;
+        }
+        // Add more else if for different activity keys
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({status: "failed", error: err.message});
+    }
+};
 
 var resultManagementController = new ResultManagementController()
 module.exports = resultManagementController
