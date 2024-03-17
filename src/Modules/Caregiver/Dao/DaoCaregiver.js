@@ -10,7 +10,6 @@ CaregiverDAO.prototype.create = async function (params, session=null) {
 
 CaregiverDAO.prototype.findOne = async function (params) {
     let doc = await CaregiverModel.findOne(params)
-    console.log(doc)
     return doc;
 }
 

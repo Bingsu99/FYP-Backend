@@ -12,7 +12,7 @@ IAMController.prototype.login = async function (req, res) {
   try{
     var doc;
     if (type === "patient"){
-      doc = await PatientDao.findOne({ email:email });
+      doc = await PatientDao.findPatientByEmail(email);
     }else if (type === "therapist"){
       doc = await TherapistDao.findOne({ email:email });
     }else if (type === "caregiver"){

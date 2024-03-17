@@ -30,6 +30,32 @@ PatientController.prototype.createPatient = async function (req, res) {
   }
 }
 
+PatientController.prototype.getPatientDetails = async function (req, res) {
+  const requestData = req.body;
+
+  try{
+    const patientDetails = await PatientDao.findPatientByID(requestData["_id"])
+  
+    var resp = {
+      "_id": patientDetails["_id"],
+      "name": patientDetails["name"],
+      "email": patientDetails["email"],
+      "access": patientDetails["access"],
+    }
+
+    
+    if (patientDetails["caregivers"] !== null){
+      const caregiverDetails = await CaregiverDao.findOne({"_id": patientDetails["caregivers"][0]})  // Assume one caregiver for now
+      resp["caregiverName"] = caregiverDetails['name']
+      resp["caregiverEmail"] = caregiverDetails['email']
+    }
+
+    res.status(200).json({status:"success", data:resp});
+  }catch(err){
+    res.status(500).json({status:"failed", error:err.message})
+  }
+}
+
 PatientController.prototype.createPatientWithToken = async function (req, res) {
   const requestData = req.body;
   var caregivers = [];

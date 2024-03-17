@@ -52,6 +52,11 @@ CompleteSentenceDeckDAO.prototype.findAllAccess = async function (params) {
   }
 }
 
+CompleteSentenceDeckDAO.prototype.findAllDecksByID = async function (deckIDs) {
+    let doc = await CompleteSentenceDeckModel.find({_id: { $in: deckIDs }})
+    return doc;
+}
+
 CompleteSentenceDeckDAO.prototype.findAllCreator = async function (params) {
   try{
     let doc = await CompleteSentenceDeckModel.find(params)

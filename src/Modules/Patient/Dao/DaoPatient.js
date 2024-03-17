@@ -9,19 +9,22 @@ PatientDAO.prototype.create = async function (params, session=null) {
     return doc;
 }
 
+// Try not to use. Able to specify params to search from controllers
 PatientDAO.prototype.findOne = async function (params) {
-  try{
     let doc = await PatientModel.findOne(params)
-    if (doc) {
-      return doc
-    } else {
-      console.log('Document not found (PatientDAO.findOne)');
-    }
-  } catch (err) {
-    console.error('Error finding document:', err);
-    // Handle error
-  }
+    return doc;
 }
+
+PatientDAO.prototype.findPatientByID = async function (patientID) {
+  let doc = await PatientModel.findOne({_id: patientID})
+  return doc;
+}
+
+PatientDAO.prototype.findPatientByEmail = async function (patientEmail) {
+  let doc = await PatientModel.findOne({email: patientEmail})
+  return doc;
+}
+
 
 PatientDAO.prototype.findAll = async function (listOfPatientsObjIDs) {
     let docs = await PatientModel.find({_id: { $in: listOfPatientsObjIDs }});
@@ -44,9 +47,10 @@ PatientDAO.prototype.deleteOne = async function (params) {
 }
 
 PatientDAO.prototype.updateOne = async function (params, update) {
+  console.log(params)
+  console.log(update)
   let doc = await PatientModel.findOneAndUpdate(params, update, { new: true });
   if (doc) {
-    console.log(doc)
     return doc;
   } else {
     console.log('Document not found (PatientDAO.updateOne)');

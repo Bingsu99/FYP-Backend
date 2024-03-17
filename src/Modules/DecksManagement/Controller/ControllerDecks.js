@@ -6,57 +6,62 @@ var patientDAO = require("../../Patient/Dao/DaoPatient")
 const Mongoose = require("../../Middlewares/Mongoose")
 function DecksController() {}
 
-// For patients. Not done yet
+// Change this to get ID of patient then use their access list to query.
 DecksController.prototype.getAccessDecks = async function (req, res) {
     const requestData = req.body;
-    const activityKey = requestData["activity"];
-
-    const params = { 
-        access: requestData["_id"], 
-    }
-
-    var resp = [];
+    const requestedActivityKey = requestData["activity"];
 
     try{
-        if (activityKey == 0){
-            const docs = await completeSentenceDeckDAO.findAllAccess(params);
+        const patientDetails = await patientDAO.findPatientByID(requestData["_id"]);
 
-            docs.forEach((doc, indx) => {
-                resp.push({
-                    _id: doc["_id"],
-                    name: doc["name"],
-                    numOfExercises: doc["exercises"].length,
-                    activity: 0
-                })
-            })
-
-        } else{
-            // Return all decks with access
-            docs = await completeSentenceDeckDAO.findAllAccess(params);
-            if (doc===null){
-                res.status(400).json({status:"failed", error:"No decks found"})
-                return;
+        if (patientDetails===null){
+            res.status(400).json({status:"failed", error:"No patient found"})
+            return;
+        }
+    
+        const patientAccess = patientDetails["access"].toObject();;
+    
+        var resp = [];
+    
+        for (let activityKey in patientAccess) {
+            activityKey = parseInt(activityKey)
+            if (requestedActivityKey!==undefined){
+                if (activityKey!==requestedActivityKey){
+                    continue;
+                }
             }
-        } // Add more activities in future if needed
 
-        
-       
-        res.status(200).json({data:resp})
+            if (activityKey === 0){
+                const arrayOfDecks = await completeSentenceDeckDAO.findAllDecksByID(patientAccess[activityKey]);
+                arrayOfDecks.forEach((deck, indx) => {
+                    resp.push({
+                        _id: deck["_id"],
+                        name: deck["name"],
+                        numOfExercises: deck["exercises"].length,
+                        activity: 0
+                    })
+                })
+            } // To add more Activities as needed
+        }
+            
+        res.status(200).json({"status":"success", data:resp})
     }catch (err) {
         console.log(err)
-        res.status(500).json({error:err.message})
+        res.status(500).json({"status":"failed", error:err.message})
     }
 }
 
 // Need change to add support for different activities
 DecksController.prototype.getCreatorDecks = async function (req, res) {
     const requestData = req.body;
+    const activity = requestData["activity"];
     const params = { 
         creator: requestData["_id"], 
     }
 
     try{
         var resp = []
+        // Add for loop and if-else inside to handle. Should have a single foreach to push
         const docs = await completeSentenceDeckDAO.findAllCreator(params);
         docs.forEach((doc, indx) => {
             resp.push({
@@ -68,10 +73,10 @@ DecksController.prototype.getCreatorDecks = async function (req, res) {
         })
         // Repeat for different exercises
 
-        res.status(200).json({data:resp})
+        res.status(200).json({"status":"success", data:resp})
     }catch (err) {
         console.log(err)
-        res.status(500).json({error:err.message})
+        res.status(500).json({"status":"failed", error:err.message})
     }
 }
 
@@ -247,9 +252,9 @@ DecksController.prototype.updateDeck = async function (req, res) {
 
             // For updating the patient access list
             i["userID"].forEach(async (userID)=>{
-                const searchParams = { _id: userID };
+                const searchParams = { _id: new Mongoose.client.Types.ObjectId(userID) };
                 const updateParams = {
-                    $pull: { [`access.${activityKey}`]: i["_id"] }
+                    $pull: { [`access.${activityKey}`]: new Mongoose.client.Types.ObjectId(i["_id"]) }
                 };
                 await patientDAO.updateOne(searchParams, updateParams)
             })

@@ -56,7 +56,7 @@ CaregiverController.prototype.createCaregiverWithToken = async function (req, re
   var patients = [];
 
   requestData["patients"].forEach(async email => {
-    var patientProfile = await patientDAO.findOne({email:email})
+    var patientProfile = await patientDAO.findPatientByEmail(email)
     if (patientProfile !== undefined){
       patients.push(patientProfile["_id"])
     }
