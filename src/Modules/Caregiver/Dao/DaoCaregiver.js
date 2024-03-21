@@ -30,7 +30,6 @@ CaregiverDAO.prototype.deleteOne = async function (params) {
 CaregiverDAO.prototype.updateOne = async function (params, update) {
   let doc = await CaregiverModel.findOneAndUpdate(params, update, { new: true });
   if (doc) {
-    console.log(doc)
     return doc;
   } else {
     console.log('Document not found (CaregiverDAO.updateOne)');

@@ -1,5 +1,7 @@
 var { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
+var { Upload } = require('@aws-sdk/lib-storage');
 var { getSignedUrl } = require("@aws-sdk/s3-request-presigner")
+const { randomBytes } = require('crypto');
 
 const bucketName = process.env.S3_BUCKET_NAME
 const bucketRegion = process.env.AWS_REGION
@@ -15,24 +17,37 @@ const s3Client = new S3Client({
     region: bucketRegion
 });
 
-function uploadFile(fileBuffer, fileName, mimetype) {
-  const uploadParams = {
-    Bucket: bucketName,
-    Body: fileBuffer,
-    Key: fileName,
-    ContentType: mimetype
-  }
+async function uploadFile(fileBuffer, mimetype) {
+  const upload = new Upload({
+    client: s3Client,
+    params: {
+      Bucket: bucketName,
+      Key: randomBytes(32).toString('hex'),
+      Body: fileBuffer,
+      ContentType: mimetype
+    },
+  });
 
-  return s3Client.send(new PutObjectCommand(uploadParams));
+  upload.on('httpUploadProgress', (progress) => {
+    console.log(progress);
+  });
+
+  try {
+    const result = await upload.done();
+    return result["Key"];
+  } catch (error) {
+    console.error('Upload failed:', error);
+    throw error;
+  }
 }
 
-function deleteFile(fileName) {
+async function deleteFile(key) {
   const deleteParams = {
     Bucket: bucketName,
-    Key: fileName,
+    Key: key,
   }
 
-  return s3Client.send(new DeleteObjectCommand(deleteParams));
+  return await s3Client.send(new DeleteObjectCommand(deleteParams));
 }
 
 async function getObjectSignedUrl(key) {
@@ -43,7 +58,7 @@ async function getObjectSignedUrl(key) {
 
   // https://aws.amazon.com/blogs/developer/generate-presigned-url-modular-aws-sdk-javascript/
   const command = new GetObjectCommand(params);
-  const seconds = 60
+  const seconds = 360
   const url = await getSignedUrl(s3Client, command, { expiresIn: seconds });
 
   return url

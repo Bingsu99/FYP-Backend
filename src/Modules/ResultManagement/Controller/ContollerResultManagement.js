@@ -44,7 +44,6 @@ ResultManagementController.prototype.getResults = async function (req, res) {
 
 ResultManagementController.prototype.getStatistics = async function (req, res) {
     const requestData = req.body;
-    console.log(requestData)
     const activityKey = requestData["activity"];
     const timeIndicator = requestData["timeIndicator"]; // This will be "day" or "week"
 

@@ -46,19 +46,17 @@ PatientDAO.prototype.deleteOne = async function (params) {
   }
 }
 
-PatientDAO.prototype.updateOne = async function (params, update) {
-  console.log(params)
-  console.log(update)
-  let doc = await PatientModel.findOneAndUpdate(params, update, { new: true });
-  if (doc) {
-    return doc;
-  } else {
-    console.log('Document not found (PatientDAO.updateOne)');
+  PatientDAO.prototype.updateOne = async function (params, update) {
+    let doc = await PatientModel.findOneAndUpdate(params, update, { new: true });
+    if (doc) {
+      return doc;
+    } else {
+      console.log('Document not found (PatientDAO.updateOne)');
+    }
   }
-}
 
 PatientDAO.prototype.addCaregiver = async function (params, elementToAdd, session) {
-  try {
+  try { 
       let doc = await PatientModel.findOneAndUpdate(params, { $push: { caregivers: elementToAdd } }, { new: true, session:session });
       if (doc) {
           return doc;

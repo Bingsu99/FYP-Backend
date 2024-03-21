@@ -11,5 +11,6 @@ router.post('/Create', DecksController.createDeck);
 router.post('/Read', DecksController.readDeck);
 router.post('/Update', DecksController.updateDeck);
 router.post('/Delete', DecksController.deleteDeck);
+router.post('/AIGenerate', DecksController.AIGenerate);
 
 module.exports = router;

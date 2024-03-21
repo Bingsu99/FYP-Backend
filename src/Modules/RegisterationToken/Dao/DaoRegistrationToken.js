@@ -9,7 +9,6 @@ RegistrationTokenDAO.prototype.create = async function (params, session) {
 }
 
 RegistrationTokenDAO.prototype.findOne = async function (params) {
-  console.log(params)
   try{
     let doc = await RegistrationTokenModel.findOne(params)
     console.log('Document not found');

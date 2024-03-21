@@ -1,15 +1,21 @@
 'use strict';
 var completeSentenceDeckDAO = require("../../CompleteSentence/Dao/DaoCompleteSentenceDeck");
+var repeatSentenceDeckDAO = require("../../RepeatSentence/Dao/DaoRepeatSentenceDeck");
 var therapistDAO = require("../../Therapist/Dao/DaoTherapist")
 var caregiverDAO = require("../../Caregiver/Dao/DaoCaregiver")
 var patientDAO = require("../../Patient/Dao/DaoPatient")
+var Constants = require("../../../Constants")
+var S3 = require("../../../Utilities/S3")
+var getRecording = require("../../../Utilities/tts")
 const Mongoose = require("../../Middlewares/Mongoose")
+var generateContent = require("../../../Utilities/OpenAI")
+
 function DecksController() {}
 
 // Change this to get ID of patient then use their access list to query.
 DecksController.prototype.getAccessDecks = async function (req, res) {
     const requestData = req.body;
-    const requestedActivityKey = requestData["activity"];
+    const requestedActivityKey = requestData["activity"] ? parseInt(requestData["activity"]) : requestData["activity"];
 
     try{
         const patientDetails = await patientDAO.findPatientByID(requestData["_id"]);
@@ -38,7 +44,17 @@ DecksController.prototype.getAccessDecks = async function (req, res) {
                         _id: deck["_id"],
                         name: deck["name"],
                         numOfExercises: deck["exercises"].length,
-                        activity: 0
+                        activity: activityKey
+                    })
+                })
+            }else if (activityKey === 1){
+                const arrayOfDecks = await repeatSentenceDeckDAO.findAllDecksByID(patientAccess[activityKey]);
+                arrayOfDecks.forEach((deck, indx) => {
+                    resp.push({
+                        _id: deck["_id"],
+                        name: deck["name"],
+                        numOfExercises: deck["exercises"].length,
+                        activity: activityKey
                     })
                 })
             } // To add more Activities as needed
@@ -54,24 +70,47 @@ DecksController.prototype.getAccessDecks = async function (req, res) {
 // Need change to add support for different activities
 DecksController.prototype.getCreatorDecks = async function (req, res) {
     const requestData = req.body;
-    const activity = requestData["activity"];
+    const requestedActivityKey = requestData["activity"] ? parseInt(requestData["activity"]) : requestData["activity"];
     const params = { 
         creator: requestData["_id"], 
     }
 
+    const activitiesKeys = Object.keys(Constants.numsToActivity);
+
     try{
         var resp = []
         // Add for loop and if-else inside to handle. Should have a single foreach to push
-        const docs = await completeSentenceDeckDAO.findAllCreator(params);
-        docs.forEach((doc, indx) => {
-            resp.push({
-                _id: doc["_id"],
-                name: doc["name"],
-                numOfExercises: doc["exercises"].length,
-                activity: 0
-            })
-        })
-        // Repeat for different exercises
+
+        for (let activityKey in activitiesKeys) {
+            activityKey = parseInt(activityKey)
+            if (requestedActivityKey!==undefined){
+                if (activityKey!==requestedActivityKey){
+                    continue;
+                }
+            }
+
+            if (activityKey === 0){
+                const docs = await completeSentenceDeckDAO.findAllCreator(params);
+                docs.forEach((doc, indx) => {
+                    resp.push({
+                        _id: doc["_id"],
+                        name: doc["name"],
+                        numOfExercises: doc["exercises"].length,
+                        activity: activityKey
+                    })
+                })
+            }else if (activityKey === 1){
+                const docs = await repeatSentenceDeckDAO.findAllCreator(params);
+                docs.forEach((doc, indx) => {
+                    resp.push({
+                        _id: doc["_id"],
+                        name: doc["name"],
+                        numOfExercises: doc["exercises"].length,
+                        activity: activityKey
+                    })
+                })
+            } // Repeat for different exercises
+        }
 
         res.status(200).json({"status":"success", data:resp})
     }catch (err) {
@@ -83,7 +122,7 @@ DecksController.prototype.getCreatorDecks = async function (req, res) {
 DecksController.prototype.createDeck = async function (req, res) {
     // Need name of deck, creatorID and userType, activity(in number)
     const requestData = req.body;
-    const activityKey = requestData["activity"];
+    const activityKey = requestData["activity"] ? parseInt(requestData["activity"]) : requestData["activity"];
     const deckParams = {
         creator: requestData["creator"],
         name: requestData["name"]
@@ -91,10 +130,13 @@ DecksController.prototype.createDeck = async function (req, res) {
 
     var doc;
     try{
-        if (activityKey == 0){
+        if (activityKey === 0){
             doc = await completeSentenceDeckDAO.create(deckParams)
+        }else if (activityKey === 1){
+            doc = await repeatSentenceDeckDAO.create(deckParams)
         }else{
             res.status(400).json({status:"failed", error:"Invalid Activity Type"})
+            return;
         } // Add more activities in future if needed
 
         const params = { _id: requestData["creator"] };
@@ -103,9 +145,9 @@ DecksController.prototype.createDeck = async function (req, res) {
         };
 
         // To depreciate the keying in from frontend.
-        if (requestData["userType"] == "caregiver"){
+        if (requestData["userType"] === "caregiver"){
             caregiverDAO.updateOne(params, update)
-        }else if (requestData["userType"] == "therapist"){
+        }else if (requestData["userType"] === "therapist"){
             therapistDAO.updateOne(params, update)
         }else{
             res.status(400).json({status:"failed", error:"Invalid UserType"})
@@ -117,6 +159,7 @@ DecksController.prototype.createDeck = async function (req, res) {
         }
 
         res.status(200).json({status:"success", data:resp})
+        return;
 
     }catch (err) {
         console.log(err)
@@ -127,12 +170,18 @@ DecksController.prototype.createDeck = async function (req, res) {
 DecksController.prototype.deleteDeck = async function (req, res) {
     // Need deckID, userID and userType, activity(in number)
     const requestData = req.body;
-    const activityKey = requestData["activity"];
+    const activityKey = requestData["activity"] ? parseInt(requestData["activity"]) : requestData["activity"];
 
     var doc;
     try{
-        if (activityKey == 0){
+        if (activityKey === 0){
             doc = await completeSentenceDeckDAO.deleteOne({_id:requestData["_id"]});
+        }else if (activityKey === 1){
+            doc = await repeatSentenceDeckDAO.deleteOne({_id:requestData["_id"]});
+            console.log(doc)
+            doc["exercises"].forEach(async(exercise)=>{
+                await S3.deleteFile(exercise["recording"]);
+            });
         }else{
             res.status(400).json({status:"failed", error:"No activity type specified"})
             return;
@@ -144,9 +193,9 @@ DecksController.prototype.deleteDeck = async function (req, res) {
             $pull: { [`creator.${activityKey}`]: doc["_id"] }
         };
         
-        if (requestData["userType"] == "caregiver"){
+        if (requestData["userType"] === "caregiver"){
             caregiverDAO.updateOne(params, update)
-        }else if (requestData["userType"] == "therapist"){
+        }else if (requestData["userType"] === "therapist"){
             therapistDAO.updateOne(params, update)
         }else{
             res.status(500).json({status:"failed", error:"Invalid userType"})
@@ -173,13 +222,19 @@ DecksController.prototype.deleteDeck = async function (req, res) {
 DecksController.prototype.readDeck = async function (req, res) {
     // Need deckID, userID, activity(in number)
     const requestData = req.body;
-    const activityKey = requestData["activity"];
+    const activityKey = requestData["activity"] ? parseInt(requestData["activity"]) : requestData["activity"];
 
     var doc;
 
     try{
-        if (activityKey == 0){
+        if (activityKey === 0){
             doc = await completeSentenceDeckDAO.findOne({_id:requestData["_id"]});
+            if (doc===null){
+                res.status(400).json({status:"failed", error:"No decks found"})
+                return;
+            }
+        }else if (activityKey === 1){
+            doc = await repeatSentenceDeckDAO.findOne({_id:requestData["_id"]});
             if (doc===null){
                 res.status(400).json({status:"failed", error:"No decks found"})
                 return;
@@ -208,11 +263,80 @@ DecksController.prototype.readDeck = async function (req, res) {
     }
 }
 
+DecksController.prototype.AIGenerate = async function (req, res) {
+    const requestData = req.body;
+    const activityKey = requestData["activity"] ? parseInt(requestData["activity"]) : requestData["activity"];
+
+    try{
+        const deckParams = {
+            creator: requestData["creator"],
+            name: requestData["name"]
+        }
+    
+        var deckDocument;
+        var generatedContent=[];
+        var bulkWriteOps = [];
+        if (activityKey === 0){
+            deckDocument = await completeSentenceDeckDAO.create(deckParams)
+            const response = JSON.parse(await generateContent(activityKey, requestData["numOfExercises"], requestData["content"]));
+            generatedContent = response["data"]
+            
+        }else if (activityKey === 1){
+            deckDocument = await repeatSentenceDeckDAO.create(deckParams)
+            const response = JSON.parse(await generateContent(activityKey, requestData["numOfExercises"], requestData["content"]));
+            for (const exercise of response["data"]) {
+                const recording = await getRecording(exercise["sentence"]);
+                const recordingKey = await S3.uploadFile(recording);
+                generatedContent.push({"sentence": exercise["sentence"], "recording": recordingKey});
+            }
+        } else{
+            res.status(400).json({status:"failed", error:"Invalid activityType"})
+            return;
+        } // Add more activities in future if needed
+
+        // Saving Exercises to deck
+        var updateParams = { 
+            updateOne: {
+                filter: {
+                    _id: deckDocument["_id"],
+                },
+                update: { $push: { exercises: { $each: generatedContent }} } 
+            }
+        }
+
+        if (activityKey === 0){
+            await completeSentenceDeckDAO.updateMultipleExercises([updateParams])
+        }else if (activityKey === 1){
+            await repeatSentenceDeckDAO.updateMultipleExercises([updateParams])
+        } // Add more activities in future if needed
+    
+        // Saving to access list of creator
+        const params = { _id: requestData["creator"] };
+        const update = {
+            $push: { [`creator.${activityKey}`]: deckDocument["_id"] }
+        };
+        // To depreciate the keying in from frontend.
+        if (requestData["userType"] === "caregiver"){
+            caregiverDAO.updateOne(params, update)
+        }else if (requestData["userType"] === "therapist"){
+            therapistDAO.updateOne(params, update)
+        }else{
+            res.status(400).json({status:"failed", error:"Invalid UserType"})
+            return;
+        }
+            
+        res.status(200).json({"status":"success", data:{"_id" : deckDocument["_id"]}})
+    }catch (err) {
+        console.log(err)
+        res.status(500).json({"status":"failed", error:err.message})
+    }
+}
+
 // Better to add session and manage transaction here
 DecksController.prototype.updateDeck = async function (req, res) {
     const requestData = req.body;
     var { update, create , deleteData, addAccess, removeAccess} = requestData;
-    const activityKey = requestData["activity"];
+    const activityKey = requestData["activity"] ? parseInt(requestData["activity"]) : requestData["activity"];
 
     var bulkWriteOps = [];
     if (addAccess!=undefined){
@@ -230,11 +354,11 @@ DecksController.prototype.updateDeck = async function (req, res) {
 
             // For updating the patient access list
             i["userID"].forEach(async (userID)=>{
-                const searchParams = { _id: userID };
+                const searchParams = { _id: new Mongoose.client.Types.ObjectId(userID) };
                 const updateParams = {
-                    $push: { [`access.${activityKey}`]: new Mongoose.client.Types.ObjectId(i["_id"]) }
+                    $push: { [`access.${activityKey}`]: new Mongoose.client.Types.ObjectId(i["_id"]) },
                 };
-                await patientDAO.updateOne(searchParams, updateParams)
+                const response = await patientDAO.updateOne(searchParams, updateParams)
             })
         })
     }else if (removeAccess!=undefined){
@@ -312,8 +436,10 @@ DecksController.prototype.updateDeck = async function (req, res) {
 
     try{
         var result
-        if (activityKey == 0){
+        if (activityKey === 0){
             result = await completeSentenceDeckDAO.updateMultipleExercises(bulkWriteOps)
+        }else if (activityKey === 1){
+            result = await repeatSentenceDeckDAO.updateMultipleExercises(bulkWriteOps)
         } // Add more activities in future if needed
 
         if (result !== null){
