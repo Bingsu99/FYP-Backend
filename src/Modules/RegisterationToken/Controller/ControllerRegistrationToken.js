@@ -1,9 +1,8 @@
 'use strict';
 var Mongoose = require('../../Middlewares/Mongoose')
-const emailClient = require('../../../Utilities/Email')
+const emailClient = require('../../../Utilities/email')
 var registrationTokenDAO = require("../Dao/DaoRegistrationToken");
 const { v4: uuidv4 } = require('uuid');
-
 
 function RegistrationToken() {}
 
@@ -65,8 +64,8 @@ RegistrationToken.prototype.createTokenPairs = async function (req, res) {
     var caregiverData = await registrationTokenDAO.create(caregiver, session);
     await session.commitTransaction();
     res.status(200).json({status:"success"})
-    // emailClient.sendRegisterEmail(requestData["patientEmail"], token);
-    // emailClient.sendRegisterEmail(requestData["caregiverEmail"], token);
+    emailClient.sendRegisterEmail(requestData["patient"]["email"], patientToken);
+    emailClient.sendRegisterEmail(requestData["caregiver"]["email"], caregiverToken);
   }catch (err) {
     console.log(err)
     res.status(500).json({status:"failed", error:err.message})

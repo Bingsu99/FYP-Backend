@@ -1,5 +1,6 @@
 'use strict';
 const CompleteSentenceResultModel = require("../Model/ModelCompleteSentenceResult")
+const Mongoose = require("../../Middlewares/Mongoose")
 
 function CompleteSentenceResultDAO() {}
 
@@ -9,7 +10,7 @@ CompleteSentenceResultDAO.prototype.create = async function (params) {
   return doc;
 }
 
-CompleteSentenceResultDAO.prototype.getResultsByDay = async function (startDate, endDate) {
+CompleteSentenceResultDAO.prototype.getResultsByDay = async function (startDate, endDate, userID) {
   
   const getDocumentsGroupedByDate = async () => {
     const startDateObj = new Date(parseInt(startDate));
@@ -20,7 +21,8 @@ CompleteSentenceResultDAO.prototype.getResultsByDay = async function (startDate,
             datetime: {
             $gte: startDateObj,
             $lte: endDateObj
-            }
+            },
+            userID: new Mongoose.client.Types.ObjectId(userID)
         }},
         {$addFields: {
             date: {
@@ -38,6 +40,8 @@ CompleteSentenceResultDAO.prototype.getResultsByDay = async function (startDate,
         }},
         {$sort: { date: 1 }}
     ]);
+
+    console.log(results)
   
     // Convert array to an object with dates as keys
     const groupedByDate = {};
@@ -51,7 +55,7 @@ CompleteSentenceResultDAO.prototype.getResultsByDay = async function (startDate,
   return await getDocumentsGroupedByDate();
 }
 
-CompleteSentenceResultDAO.prototype.getResultsByWeek = async function (startDate, endDate) {
+CompleteSentenceResultDAO.prototype.getResultsByWeek = async function (startDate, endDate, userID) {
   const getDocumentsGroupedByWeek = async () => {
     const startDateObj = new Date(parseInt(startDate));
     const endDateObj = new Date(parseInt(endDate));
@@ -62,7 +66,8 @@ CompleteSentenceResultDAO.prototype.getResultsByWeek = async function (startDate
           datetime: {
             $gte: startDateObj,
             $lte: endDateObj
-          }
+          },
+          userID: new Mongoose.client.Types.ObjectId(userID)
         }
       },
       {
@@ -93,6 +98,8 @@ CompleteSentenceResultDAO.prototype.getResultsByWeek = async function (startDate
         $sort: { year: 1, week: 1 }
       }
     ]);
+
+    console.log(results)
   
     // Convert array to an object with 'year-week' as keys
     const groupedByWeek = {};
@@ -107,7 +114,7 @@ CompleteSentenceResultDAO.prototype.getResultsByWeek = async function (startDate
   return await getDocumentsGroupedByWeek();
 };
 
-CompleteSentenceResultDAO.prototype.getStatisticByDay = async function (startDate, endDate) {
+CompleteSentenceResultDAO.prototype.getStatisticByDay = async function (startDate, endDate, userID) {
   const getDocumentsGroupedByDate = async () => {
     const startDateObj = new Date(parseInt(startDate));
     const endDateObj = new Date(parseInt(endDate));
@@ -118,7 +125,8 @@ CompleteSentenceResultDAO.prototype.getStatisticByDay = async function (startDat
           datetime: {
             $gte: startDateObj,
             $lte: endDateObj
-          }
+          },
+          userID: new Mongoose.client.Types.ObjectId(userID)
         }
       },
       {
@@ -156,6 +164,8 @@ CompleteSentenceResultDAO.prototype.getStatisticByDay = async function (startDat
       }
     ]);
   
+    console.log(results)
+
     // Convert array to an object with dates as keys and correct/incorrect counts
     const groupedByDate = {};
     results.forEach(result => {
@@ -171,7 +181,7 @@ CompleteSentenceResultDAO.prototype.getStatisticByDay = async function (startDat
   return await getDocumentsGroupedByDate();
 }
 
-CompleteSentenceResultDAO.prototype.getStatisticByWeek = async function (startDate, endDate) {
+CompleteSentenceResultDAO.prototype.getStatisticByWeek = async function (startDate, endDate, userID) {
   const getDocumentsGroupedByWeek = async () => {
     const startDateObj = new Date(parseInt(startDate));
     const endDateObj = new Date(parseInt(endDate));
@@ -182,7 +192,8 @@ CompleteSentenceResultDAO.prototype.getStatisticByWeek = async function (startDa
           datetime: {
             $gte: startDateObj,
             $lte: endDateObj
-          }
+          },
+          userID: new Mongoose.client.Types.ObjectId(userID)
         }
       },
       {
@@ -223,6 +234,8 @@ CompleteSentenceResultDAO.prototype.getStatisticByWeek = async function (startDa
         $sort: { year: 1, week: 1 }
       }
     ]);
+
+    console.log(results)
 
     // Convert array to an object with 'year-week' as keys and correct/incorrect counts
     const groupedByWeek = {};
@@ -240,7 +253,7 @@ CompleteSentenceResultDAO.prototype.getStatisticByWeek = async function (startDa
   return await getDocumentsGroupedByWeek();
 };
 
-CompleteSentenceResultDAO.prototype.getTimeSpentByDay = async function (startDate, endDate) {
+CompleteSentenceResultDAO.prototype.getTimeSpentByDay = async function (startDate, endDate, userID) {
   const getDocumentsGroupedByDate = async () => {
     const startDateObj = new Date(parseInt(startDate));
     const endDateObj = new Date(parseInt(endDate));
@@ -251,7 +264,8 @@ CompleteSentenceResultDAO.prototype.getTimeSpentByDay = async function (startDat
           datetime: {
             $gte: startDateObj,
             $lte: endDateObj
-          }
+          },
+          userID: new Mongoose.client.Types.ObjectId(userID)
         }
       },
       {
@@ -285,6 +299,8 @@ CompleteSentenceResultDAO.prototype.getTimeSpentByDay = async function (startDat
       }
     ]);
 
+    console.log(results)
+
     // Convert array to an object with dates as keys and sums of durations and document counts
     const groupedByDate = {};
     results.forEach(result => {
@@ -301,7 +317,7 @@ CompleteSentenceResultDAO.prototype.getTimeSpentByDay = async function (startDat
 }
 
 
-CompleteSentenceResultDAO.prototype.getTimeSpentByWeek = async function (startDate, endDate) {
+CompleteSentenceResultDAO.prototype.getTimeSpentByWeek = async function (startDate, endDate, userID) {
   const getDocumentsGroupedByWeek = async () => {
     const startDateObj = new Date(parseInt(startDate));
     const endDateObj = new Date(parseInt(endDate));
@@ -312,7 +328,8 @@ CompleteSentenceResultDAO.prototype.getTimeSpentByWeek = async function (startDa
           datetime: {
             $gte: startDateObj,
             $lte: endDateObj
-          }
+          },
+          userID: new Mongoose.client.Types.ObjectId(userID)
         }
       },
       {
@@ -349,6 +366,8 @@ CompleteSentenceResultDAO.prototype.getTimeSpentByWeek = async function (startDa
         $sort: { year: 1, week: 1 }
       }
     ]);
+
+    console.log(results)
 
     // Convert array to an object with 'year-week' as keys and total durations and document counts
     const groupedByWeek = {};

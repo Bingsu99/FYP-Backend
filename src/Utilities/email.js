@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const FrontEndServer = process.env.FRONTEND_URL;
 
 const transporter = nodemailer.createTransport({
   service: "Gmail",
@@ -16,7 +17,7 @@ function sendRegisterEmail(receiverEmail, token){
       from: process.env.EMAIL_ADDRESS, // Sender address
       to: receiverEmail, // List of recipients
       subject: "Registration of Account", // Subject line
-      text: token // Plain text body
+      text: FrontEndServer + "register/" + token // Plain text body
     };
 
   transporter.sendMail(mailOptions, (error, info) => {

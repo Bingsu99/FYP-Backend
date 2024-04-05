@@ -21,7 +21,10 @@ PatientDAO.prototype.findPatientByID = async function (patientID) {
 }
 
 PatientDAO.prototype.findPatientByEmail = async function (patientEmail) {
+  console.log("patientEmail")
+  console.log(patientEmail)
   let doc = await PatientModel.findOne({email: patientEmail})
+  
   return doc;
 }
 
