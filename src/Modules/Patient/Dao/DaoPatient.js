@@ -21,8 +21,6 @@ PatientDAO.prototype.findPatientByID = async function (patientID) {
 }
 
 PatientDAO.prototype.findPatientByEmail = async function (patientEmail) {
-  console.log("patientEmail")
-  console.log(patientEmail)
   let doc = await PatientModel.findOne({email: patientEmail})
   
   return doc;
@@ -49,14 +47,14 @@ PatientDAO.prototype.deleteOne = async function (params) {
   }
 }
 
-  PatientDAO.prototype.updateOne = async function (params, update) {
-    let doc = await PatientModel.findOneAndUpdate(params, update, { new: true });
-    if (doc) {
-      return doc;
-    } else {
-      console.log('Document not found (PatientDAO.updateOne)');
-    }
+PatientDAO.prototype.updateOne = async function (params, update) {
+  let doc = await PatientModel.findOneAndUpdate(params, update, { new: true });
+  if (doc) {
+    return doc;
+  } else {
+    console.log('Document not found (PatientDAO.updateOne)');
   }
+}
 
 PatientDAO.prototype.addCaregiver = async function (params, elementToAdd, session) {
   try { 
@@ -69,6 +67,44 @@ PatientDAO.prototype.addCaregiver = async function (params, elementToAdd, sessio
   } catch (err) {
       console.error('Error updating document:', err);
       // Handle error
+  }
+}
+
+PatientDAO.prototype.updateDailyAssignment = async function (patientId, activity, newDecks, numExercises) {
+  try { 
+      let doc = await PatientModel.findOneAndUpdate(
+        { _id: patientId },
+        {
+          $set: {
+            [`dailyAssignment.decks.${activity}`]: newDecks,
+            [`dailyAssignment.exerciseRequirements.${activity}`]: numExercises
+          }
+        },
+        { new: true }
+      );
+
+      if (doc) {
+          return doc;
+      } else {
+          console.log('Document not found (PatientDAO.addCaregiver)');
+      }
+  } catch (err) {
+      console.error('Error updating document:', err);
+      // Handle error
+  }
+}
+
+PatientDAO.prototype.updateDailyAssignmentRecord = async function (activity, exerciseID, userID) {
+  try {
+    var doc = await PatientModel.findOneAndUpdate(
+      { _id: userID },
+      { $push: { [`dailyAssignmentRecord.completed.${activity}`]: exerciseID } },
+      { new: true }
+    );
+
+    return doc;
+  } catch (err) {
+    console.error('Error updating document:', err);
   }
 }
 

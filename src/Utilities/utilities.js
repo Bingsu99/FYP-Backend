@@ -22,6 +22,25 @@ function combineObjects(...objects) {
     return combined;
 }
 
+function allocateExercises(decks, remainingExercises, deckLimits) {
+    let allocation = {};
+
+    for (let i = 0; i < decks.length - 1; i++) {
+        let maxPossible = remainingExercises - (decks.length - i - 1);
+        let deckLimit = deckLimits[decks[i]] !== undefined ? deckLimits[decks[i]] : maxPossible;
+        let allocationForDeck = Math.floor(Math.random() * (Math.min(maxPossible, deckLimit) + 1));
+
+        allocation[decks[i]] = allocationForDeck;
+        remainingExercises -= allocationForDeck;
+    }
+
+    // Ensure the last deck's allocation does not exceed its limit or the remaining exercises
+    let lastDeckLimit = deckLimits[decks[decks.length - 1]] !== undefined ? deckLimits[decks[decks.length - 1]] : remainingExercises;
+    allocation[decks[decks.length - 1]] = Math.min(remainingExercises, lastDeckLimit);
+
+    return allocation;
+}
+
 module.exports = {
     combineObjects : combineObjects,
 }

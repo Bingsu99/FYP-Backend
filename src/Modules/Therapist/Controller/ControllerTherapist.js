@@ -1,7 +1,7 @@
 'use strict';
 var TherapistDao = require("../Dao/DaoTherapist");
 const patientDAO = require("../../Patient/Dao/DaoPatient");
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 function TherapistController() {}
 

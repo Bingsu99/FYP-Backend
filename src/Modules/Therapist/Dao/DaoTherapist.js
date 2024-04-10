@@ -30,7 +30,6 @@ TherapistDAO.prototype.deleteOne = async function (params) {
 TherapistDAO.prototype.updateOne = async function (params, update) {
   let doc = await TherapistModel.findOneAndUpdate(params, update, { new: true });
   if (doc) {
-    console.log(doc)
     return doc;
   } else {
     console.log('Document not found');

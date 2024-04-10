@@ -2,24 +2,25 @@
 const mongoose = require('mongoose');
 const ActivityAccessSchema = require("../../DecksManagement/Model/ActivityAccessSchema")
 
-// const exerciseRecordSchema = new mongoose.Schema({
-//   deckID: { type: mongoose.Schema.Types.ObjectId },
-//   datetime: {
-//     type: Date,
-//     default: Date.now // This sets the default value to the current date and time
-//   }
-// });
+const ExerciseRequirementSchema = new mongoose.Schema({
+  "0" : { type: Number, default: 0},
+  "1" : { type: Number, default: 0},
+}, { _id: false });
 
-// const dailyAssignmentRecordSchema = new mongoose.Schema({
-//   repeatSentenceDecks: { type: [mongoose.Schema.Types.ObjectId] },
-//   repeatSentenceRequirements: { type: Number },
-//   completeSentenceDecks: { type: [mongoose.Schema.Types.ObjectId] },
-//   completeSentenceRequirements: { type: Number },
-//   lastUpdated: {
-//       type: Date,
-//       default: Date.now // This sets the default value to the current date and time
-//   }
-// });
+const dailyAssignmentSchema = new mongoose.Schema({
+  decks: { type: ActivityAccessSchema },
+  exerciseRequirements: { type: ExerciseRequirementSchema },
+}, { _id: false });
+
+const dailyAssignmentRecordSchema = new mongoose.Schema({
+  completed: { type: ActivityAccessSchema },
+  lastUpdated: { type: Date }
+}, { _id: false });
+
+const dailyStreak = new mongoose.Schema({
+  completed: { type: Number, default: 0 },
+  lastUpdated: { type: Date }
+}, { _id: false });
 
 const patientSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -27,12 +28,11 @@ const patientSchema = new mongoose.Schema({
   password: { type: String, required: true },
   caregivers: { type: [mongoose.Schema.Types.ObjectId] },
   therapists: { type: [mongoose.Schema.Types.ObjectId] },
-  access: { type: ActivityAccessSchema }
+  access: { type: ActivityAccessSchema},
+  dailyAssignment: { type: dailyAssignmentSchema, default: () => ({ decks: {}, exerciseRequirements: {} })},
+  dailyAssignmentRecord: { type: dailyAssignmentRecordSchema, default: () => ({ completed: {}, lastUpdated: new Date() }) },
+  dailyStreak: { type: dailyStreak, default: () => ({ completed: 0, lastUpdated: new Date() })}
 });
-
-  // repeatSentence_result: {type: [exerciseRecordSchema]},
-  // completeSentence_result: {type: [exerciseRecordSchema]},
-  // dailyAssignment_result: {type: [{assignmentRecordID : mongoose.Schema.Types.ObjectId, datetime: {type: Date,}}]}
 
 const PatientModel = mongoose.model('Patient', patientSchema);
 

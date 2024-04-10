@@ -1,5 +1,7 @@
 'use strict';
 var CompleteSentenceResultDAO = require("../../CompleteSentence/Dao/DaoCompleteSentenceResult");
+var RepeatSentenceResultDAO = require("../../RepeatSentence/Dao/DaoRepeatSentenceResult");
+var PatientDao = require("../../Patient/Dao/DaoPatient");
 
 function ResultManagementController() {}
 
@@ -121,6 +123,31 @@ ResultManagementController.prototype.getTimeSpent = async function (req, res) {
         res.status(500).json({status: "failed", error: err.message});
     }
 };
+
+ResultManagementController.prototype.create = async function (req, res) {
+  const { activity, params, dailyAssignment } = req.body;
+
+  var doc;
+  if (activity == 0){
+    doc = await CompleteSentenceResultDAO.create(params);
+  }else if (activity == 1){
+    doc = await RepeatSentenceResultDAO.create(params);
+  }else{
+    res.status(400).json({status:"failed", error:"No activity type specified"})
+    return;
+  } // Add more activities if needed
+
+  if (dailyAssignment){
+    await PatientDao.updateDailyAssignmentRecord(activity, doc["_id"], params["userID"]);
+  }
+
+  res.status(200).json({status:"success", data:doc})
+}
+
+ResultManagementController.prototype.read = async function (req, res) {
+  const {  } = req.body;
+  
+}
 
 var resultManagementController = new ResultManagementController()
 module.exports = resultManagementController

@@ -57,5 +57,19 @@ RepeatSentenceController.prototype.delete = async function (req, res) {
     }
 }
 
+RepeatSentenceController.prototype.saveAndTranscript = async function (req, res) {
+    const file = req.file;
+
+    try{
+        const result = await S3.saveToS3andTranscript(file.buffer, "audio/mpeg")
+        console.log(result)
+
+        res.status(200).json({status:"success", data:result})
+    }catch (err) {
+        console.log(err)
+        res.status(500).json({status:"failed", error:err.message})
+    }
+}
+
 var repeatSentence = new RepeatSentenceController()
 module.exports = repeatSentence

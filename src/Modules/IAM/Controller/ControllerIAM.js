@@ -3,7 +3,7 @@ var CaregiverDao = require("../../Caregiver/Dao/DaoCaregiver");
 var TherapistDao = require("../../Therapist/Dao/DaoTherapist");
 var PatientDao = require("../../Patient/Dao/DaoPatient");
 const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 function IAMController() {}
 
@@ -24,6 +24,45 @@ IAMController.prototype.login = async function (req, res) {
     const passwordMatch = await bcrypt.compare(password, doc.password);
     if (!passwordMatch) {
       return res.status(401).json({ status:"failed", message: 'Authentication failed' });
+    }else if(type === "patient" &&  passwordMatch){
+      doc = doc.toObject();
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+
+      const lastUpdatedDailyStreak = new Date(doc["dailyStreak"]["lastUpdated"]);
+      lastUpdatedDailyStreak.setHours(0, 0, 0, 0);
+
+      const lastUpdatedAssignmentRecord = new Date(doc["dailyAssignmentRecord"]["lastUpdated"]);
+      lastUpdatedAssignmentRecord.setHours(0, 0, 0, 0);
+
+      let updateData = {
+        $set: {}
+      };
+
+      var isModified = false;
+
+      if (lastUpdatedAssignmentRecord.getTime() !== today.getTime()) {
+        Object.keys(doc["dailyAssignmentRecord"]["completed"]).forEach((key) => {
+          updateData.$set[`dailyAssignmentRecord.completed.${key}`] = [];
+          updateData.$set[`dailyAssignmentRecord.lastUpdated`] = new Date();
+        });
+        isModified=true;
+      }
+
+      if(lastUpdatedDailyStreak.getTime() !== today.getTime() && lastUpdatedDailyStreak.getTime() !== yesterday.getTime()){
+        updateData.$set[`dailyStreak.completed`] = 0;
+        updateData.$set[`dailyStreak.lastUpdated`] = new Date();
+        isModified=true;
+      }
+      if (isModified===true){
+        doc = await PatientDao.updateOne({"_id":doc["_id"]}, updateData);
+      }
+     
     }
 
     // Generate JWT tokens
@@ -41,7 +80,7 @@ IAMController.prototype.login = async function (req, res) {
 
     res.cookie('refreshToken', refreshToken, cookieOptions);
 
-    res.status(200).json({status:"success", accessToken, data:{"_id": doc["_id"]} });
+    res.status(200).json({status:"success", accessToken, data:{ "_id": doc["_id"], name:doc["name"], ...(doc["dailyStreak"]&&{dailyStreak:doc["dailyStreak"]["completed"]}) } });
   } catch (error) {
     console.log(error)
     res.status(500).json({status:"failed", message: 'Internal Server error' });
@@ -72,7 +111,7 @@ IAMController.prototype.register = async function (req, res) {
       res.status(400).json({status:"failed", message: 'Bad Request: Invalid User Type ' + type})
     }
 
-    res.status(200).json({ status:"success", data:{"_id": doc["_id"]}});
+    res.status(200).json({ status:"success", data:{"_id": doc["_id"], name:doc["name"]}});
   } catch (error) {
     console.log(error)
     res.status(500).json({status:"failed", message: 'Internal Server error' });

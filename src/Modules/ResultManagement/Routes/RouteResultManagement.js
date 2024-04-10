@@ -7,5 +7,7 @@ var ResultManagementController = require("../Controller/ContollerResultManagemen
 // router.post('/Result', ResultManagementController.getResults);
 router.post('/Stats', ResultManagementController.getStatistics);
 router.post('/TimeSpent', ResultManagementController.getTimeSpent);
+router.post('/Add', ResultManagementController.create);
+router.post('/Read', ResultManagementController.read);
 
 module.exports = router;

@@ -3,7 +3,7 @@ var Mongoose = require('../../Middlewares/Mongoose')
 var caregiverDao = require("../Dao/DaoCaregiver");
 const patientDAO = require("../../Patient/Dao/DaoPatient");
 const registrationTokenDao = require("../../RegisterationToken/Dao/DaoRegistrationToken");
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 function CaregiverController() {}
 
@@ -54,13 +54,10 @@ CaregiverController.prototype.getPatients = async function (req, res) {
 CaregiverController.prototype.createCaregiverWithToken = async function (req, res) {
   const requestData = req.body;
   var patients = [];
-  console.log("request data")
-  console.log(requestData)
 
   requestData["patients"].forEach(async email => {
     var patientProfile = await patientDAO.findPatientByEmail(email)
     if (patientProfile !== null){
-      console.log(patientProfile)
       patients.push(patientProfile["_id"])
     }
   });

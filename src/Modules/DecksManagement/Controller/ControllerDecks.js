@@ -202,11 +202,14 @@ DecksController.prototype.deleteDeck = async function (req, res) {
             return;
         }
         
-        // Handle removing of deckID from patient's access list
+        // Handle removing of deckID from patient's access list and daily assignment
         for (const userID of doc["access"]) {
             const searchParams = { _id: userID };
             const updateParams = {
-                $pull: { [`access.${activityKey}`]: doc["_id"] }
+                $pull: {
+                    [`access.${activityKey}`]: doc["_id"],
+                    [`dailyAssignment.decks.${activityKey}`]: doc["_id"]
+                }
             };
             await patientDAO.updateOne(searchParams, updateParams);
         }
@@ -451,6 +454,131 @@ DecksController.prototype.updateDeck = async function (req, res) {
     }catch (err) {
         console.log(err)
         res.status(500).json({status:"failed", error:err.message})
+    }
+}
+
+DecksController.prototype.getDailyAssignment = async function (req, res) {
+    const requestData = req.body;
+    
+    try{
+        const patientData = await patientDAO.findPatientByID(requestData["_id"]);
+        res.status(200).json({"status":"success", data:{"dailyAssignment": patientData["dailyAssignment"]}})
+    }catch (err) {
+        console.log(err)
+        res.status(500).json({"status":"failed", error:err.message})
+    }
+}
+
+DecksController.prototype.updateDailyAssignment = async function (req, res) {
+    const requestData = req.body;
+    const objectIdDecks = requestData["decks"].map(id => new Mongoose.client.Types.ObjectId(id));
+    try{
+        const patientData = await patientDAO.updateDailyAssignment(requestData["_id"], requestData["activity"], objectIdDecks, requestData["numExercises"]);
+        res.status(200).json({"status":"success", data:patientData})
+    }catch (err) {
+        console.log(err)
+        res.status(500).json({"status":"failed", error:err.message})
+    }
+}
+
+function allocateExercises(decks, remainingExercises, deckLimits) {
+    if (decks.length === 0){
+        return {};
+    }
+
+    let allocation = {};
+
+    for (let i = 0; i < decks.length - 1; i++) {
+        let maxPossible = remainingExercises - (decks.length - i - 1);
+        let deckLimit = deckLimits[decks[i]] !== undefined ? deckLimits[decks[i]] : maxPossible;
+        let allocationForDeck = Math.floor(Math.random() * (Math.min(maxPossible, deckLimit) + 1));
+
+        allocation[decks[i]] = allocationForDeck;
+        remainingExercises -= allocationForDeck;
+    }
+
+    // Ensure the last deck's allocation does not exceed its limit or the remaining exercises
+    let lastDeckLimit = deckLimits[decks[decks.length - 1]] !== undefined ? deckLimits[decks[decks.length - 1]] : remainingExercises;
+    allocation[decks[decks.length - 1]] = Math.min(remainingExercises, lastDeckLimit);
+
+    return allocation;
+}
+
+function getRandomElementsFromArray(deckDetails, numberOfElements, activityKey) {
+    var exerciseArray = deckDetails["exercises"];
+    var exerciseArrayCopy = JSON.parse(JSON.stringify(exerciseArray))
+    let arrayCopy = [...exerciseArrayCopy];
+    let result = [];
+  
+    for (let i = 0; i < numberOfElements; i++) {
+      let index = Math.floor(Math.random() * arrayCopy.length);
+      arrayCopy[index]["deckID"] = deckDetails["_id"];
+      arrayCopy[index]["activity"] = activityKey;
+      arrayCopy[index]["dailyAssignment"] = true;
+
+      result.push(arrayCopy[index]);
+      arrayCopy.splice(index, 1);
+    }
+  
+    return result;
+}
+
+DecksController.prototype.executeDailyAssignment = async function (req, res) {
+    const requestData = req.body;
+
+    try{
+        const rawData = await patientDAO.findPatientByID(requestData["_id"]);
+        const patientData = rawData.toObject();
+        var completedNumbers = {}
+        var activities = []
+
+        Object.keys(patientData["dailyAssignmentRecord"]["completed"]).forEach((key) => {
+            completedNumbers[key] = patientData["dailyAssignmentRecord"]["completed"][key].length;
+        });
+
+        const keys = Object.keys(Constants.numsToActivity);
+
+        for (let activityKey of keys) {
+            let exercisesLengthMap = {};
+            for (let deckID of patientData["dailyAssignment"]["decks"][activityKey]) {
+                let deck;
+                if (activityKey === '0'){
+                    deck = await completeSentenceDeckDAO.findOne({ "_id": deckID });
+                }else{
+                    deck = await repeatSentenceDeckDAO.findOne({ "_id": deckID });
+                }
+
+                if (deck) {
+                    exercisesLengthMap[deckID] = deck.exercises.length;
+                } else {
+                    exercisesLengthMap[deckID] = 0;
+                    console.log(`Deck with ID ${deckID} was not found.`);
+                }
+            }
+            const numExerciseLeft = patientData["dailyAssignment"]["exerciseRequirements"][activityKey] - completedNumbers[activityKey];
+            const allocation = allocateExercises(patientData["dailyAssignment"]["decks"][activityKey], numExerciseLeft, exercisesLengthMap);
+
+            console.log(allocation)
+
+            for (let [deckID, numberOfExercise] of Object.entries(allocation)) {
+                if (activityKey === '0'){
+                    var deckDetails = await completeSentenceDeckDAO.findOne({"_id": deckID});
+                    var exercisesSelected = getRandomElementsFromArray(deckDetails, numberOfExercise, activityKey);
+                    activities.push(...exercisesSelected);
+                } 
+                else if (activityKey === '1'){
+                    var deckDetails  = await repeatSentenceDeckDAO.findOne({"_id": deckID});
+                    console.log(deckDetails)
+                    var exercisesSelected = getRandomElementsFromArray(deckDetails, numberOfExercise, activityKey);
+                    activities.push(...exercisesSelected);
+                }
+            }
+        }
+
+        res.status(200).json({"status":"success", data:activities})
+    }catch (err) {
+        console.log(err)
+        res.status(500).json({"status":"failed", error:err.message})
     }
 }
 
